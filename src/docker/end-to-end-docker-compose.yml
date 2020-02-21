@@ -1,0 +1,71 @@
+version: '3'
+
+networks:
+  app-tier:
+    driver: bridge
+
+# Launch: $ docker-compose -f docker-compose.yml up -d
+services:
+  api:
+
+    image: supply-chain-replenishment/maven-e2e:e2e
+
+# TODO: consider replacing 'image' with 'build'
+#    build:
+#      args:
+#        - JAR_NAME=*.jar
+#      dockerfile: ./src/docker/Dockerfile
+#      context: ../..
+
+    ports:
+      - 8080:8080
+    networks:
+      - app-tier
+    depends_on:
+      - kafka
+
+  kafka:
+    image: landoop/fast-data-dev:2.3.1
+    environment:
+      ADV_HOST: kafka
+      RUNTESTS: 0             # Disable running tests so the cluster starts faster
+      FORWARDLOGS: 0
+      SAMPLEDATA: 0           # Do not create sample data
+    ports:
+      - 2181:2181             # Zookeeper
+      - 3030:3030             # Landoop UI
+      - 8081:8081             # Schema Registry
+      - 9092:9092             # Kafka broker
+    networks:
+      - app-tier
+
+  portainer:
+    image: portainer/portainer
+    command: -H unix:///var/run/docker.sock
+    restart: always
+    ports:
+      - 9000:9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app-tier
+
+#  postman:
+#    depends_on:
+#      - api
+#    image: postman/newman
+#    # Provide "-it" parameters so that shell script can be launched.
+#    stdin_open: true
+#    tty: true
+#
+#    # Launch shell script and wait. docker exec will be used to launch newman scripts
+#    entrypoint:
+#      - sh
+#
+##      - newman
+##      - run
+##      - orders-test8081Webhook.postman_collection.json
+#    volumes:
+#      - ../../src/postman:/etc/newman
+#    networks:
+#      - app-tier

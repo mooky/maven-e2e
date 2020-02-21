@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.2.4.RELEASE</version>
+    </parent>
+
+
+    <groupId>local.gaeke</groupId>
+    <artifactId>maven-e2e</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+
+    <properties>
+        <!--
+            java.version is a SpringBoot plugin property that manages the source and target compiler settings.
+            Choose '1.8' or '11'.
+        -->
+        <java.version>11</java.version>
+
+        <!-- dependency versions not managed by Spring Boot's BOM -->
+        <org.mapstruct.version>1.3.1.Final</org.mapstruct.version>
+        <org.projectlombok.version>1.18.12</org.projectlombok.version>
+
+        <!-- Default test tag run for maven-failsafe-plugin -->
+        <junit.tag>Integration</junit.tag>
+
+        <!-- docker related variables -->
+        <docker.build.skip>true</docker.build.skip>
+        <docker.image>supply-chain-replenishment/${project.artifactId}</docker.image>
+
+    </properties>
+
+
+    <dependencies>
+
+        <!--
+            ====== Begin application dependencies ======
+        -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${org.mapstruct.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${org.projectlombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- many, many more ... -->
+
+
+
+        <!--
+            ====== Begin test dependencies ======
+        -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+
+            <!--
+                Use JUnit5; exclude JUnit4 support.
+            -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.12.5</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>1.12.5</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <!--
+
+        Profiles are created to facilitate running build pipeline steps locally on developer
+        workstations. Tasks that should never be executed on a developer workstation are
+        intended to be implemented within the build pipeline and not included as a Maven profile.
+
+    -->
+    <profiles>
+
+        <!--
+            When the end-to-end profile is active, the maven-failsafe-plugin will be flipped from performing
+            integration tests to performing end-to-end tests.
+
+            maven verify -P end-to-end
+        -->
+        <profile>
+            <id>end-to-end</id>
+            <properties>
+                <junit.tag>EndToEnd</junit.tag>
+                <docker.build.skip>false</docker.build.skip>
+            </properties>
+        </profile>
+
+        <!--
+            When the build-docker profile is active, a docker image for the service
+            will be created during the package phase.
+
+            maven package -P docker-build
+        -->
+        <profile>
+            <id>docker-build</id>
+            <properties>
+                <docker.build.skip>false</docker.build.skip>
+            </properties>
+        </profile>
+
+    </profiles>
+
+    <build>
+
+        <plugins>
+
+            <!--
+                ====== spring-boot-maven-plugin ======
+
+                Because it's a SpringBoot project.
+            -->
+<!--            <plugin>-->
+<!--                <groupId>org.springframework.boot</groupId>-->
+<!--                <artifactId>spring-boot-maven-plugin</artifactId>-->
+<!--            </plugin>-->
+
+            <!--
+                ====== maven-failsafe-plugin ======
+
+                Performs either integration or end-to-end testing. The default mode will be to execute
+                integration tests (JUnit5 tests tagged with 'Integration').
+
+                To perform end-to-end tests, execute the end-to-end profile which will change the target tag
+                from 'Integration' to 'EndToEnd'.
+
+                Note that the default class naming conventions for integration tests has been removed and now
+                solely relies on JUnit5 tags to select the appropriate test cases.
+
+                Example usage:
+
+                    mvn verify                      # executes integration tests
+                    mvn verify -P end-to-end        # executes end-to-end tests
+
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <!--
+                        Override default class naming conventions. Rely on JUnit5 tags instead
+                    -->
+                    <includes>
+                        <include>**/*.class</include>
+                    </includes>
+                    <!--
+                        Select between tests tagged with 'Integration' or 'EndToEnd'
+                    -->
+                    <groups>${junit.tag}</groups>
+                    <excludedGroups>Unit</excludedGroups>
+                </configuration>
+            </plugin>
+
+
+            <!--
+                ====== maven-surefire-plugin ======
+
+                Configured to execute unit test cases tagged with JUnit tag 'Unit'.
+
+                Example usage:
+
+                mvn test        # executes all unit tests tagged with 'Unit'
+
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Execute only tests tagged as Unit -->
+                    <groups>Unit</groups>
+                    <!-- Skip any tests tagged as integration or end-to-end -->
+                    <excludedGroups>Integration, EndToEnd</excludedGroups>
+                </configuration>
+            </plugin>
+
+
+            <!--
+                ====== maven-antrun-plugin ======
+
+                A collection of ant tasks attached to an appropriate maven phase and skipped by default.
+                Maven profiles are used to enable the execution of the ant tasks.
+
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <!--
+                        docker-build will generate a docker image for the service.
+
+                        mvn package -P docker-build
+
+                    -->
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+
+                        <configuration>
+                            <target>
+
+                                <echo message="-------------------------------------------------------" />
+                                <echo message="D O C K E R I Z I N G - ${project.build.finalName}.jar" />
+                                <echo message="-------------------------------------------------------" />
+
+
+                                <exec executable="docker">
+
+                                    <arg value="build" />
+
+                                    <!-- pass the final output JAR name to the docker build command -->
+                                    <arg value="--build-arg" />
+                                    <arg value="JAR_NAME=${project.build.finalName}.jar" />
+
+                                    <!-- tag the docker image; multiple tags can be specified if needed -->
+                                    <arg value="-t" />
+                                    <arg value="${docker.image}:${project.version}" />
+                                    <!-- this tag is used for end-to-end testing; not intended for container registry -->
+                                    <arg value="-t" />
+                                    <arg value="${docker.image}:e2e" />
+
+                                    <!-- Specify where to find Dockerfile relative to build context '.' -->
+                                    <arg value="-f" />
+                                    <arg value="./src/docker/Dockerfile" />
+
+                                    <!-- build context should be at root folder -->
+                                    <arg value="." />
+                                </exec>
+
+                                <!--
+                                    Consider if pushing to docker registry makes sense here or if publishing
+                                    should only be performed from build pipeline. If only from build pipeline,
+                                    there may be no need to complicate the pom.xml with additional responsibilities.
+                                 -->
+
+                            </target>
+                            <skip>${docker.build.skip}</skip>
+                        </configuration>
+
+                    </execution>
+
+                </executions>
+            </plugin>
+
+
+
+            <!--
+                ====== versions-maven-plugin ======
+
+                Generates a list of plugins used in your project with newer versions available.
+
+                Example usage:
+
+                mvn versions:display-plugin-updates
+                mvn versions:display-dependency-updates
+            -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>2.5</version>
+                <configuration>
+                    <generateBackupPoms>false</generateBackupPoms>
+                </configuration>
+            </plugin>
+
+
+            <!-- Creates target/classes/META-INF/build-info.properties for populating /actuator/info endpoint -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Creates target/classes/git.properties for populating git info in /actuator/info endpoint -->
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!--
+                ====== maven-compiler-plugin ======
+
+                Compiles code for the specified java.version and incorporates code generation for
+                mapstruct and Lombok.
+
+                Example usage:
+
+                mvn compile
+
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${org.mapstruct.version}</version>
+                        </path>
+
+                        <!-- other annotation processors -->
+
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${org.projectlombok.version}</version>
+                        </path>
+
+                    </annotationProcessorPaths>
+
+                    <compilerArgs>
+                        <!-- Annotate mapper classes with Spring bean '@Component' -->
+                        <compilerArg>-Amapstruct.defaultComponentModel=spring</compilerArg>
+                    </compilerArgs>
+
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>

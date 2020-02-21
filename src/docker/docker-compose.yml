@@ -1,0 +1,34 @@
+version: '3'
+
+networks:
+  app-tier:
+    driver: bridge
+
+# Launch: $ docker-compose -f docker-compose.yml up -d
+services:
+
+  kafka:
+    image: landoop/fast-data-dev:2.3.1
+    environment:
+      ADV_HOST: kafka
+      RUNTESTS: 0             # Disable running tests so the cluster starts faster
+      FORWARDLOGS: 0
+      SAMPLEDATA: 0           # Do not create sample data
+    ports:
+      - 2181:2181             # Zookeeper
+      - 3030:3030             # Landoop UI
+      - 8081:8081             # Schema Registry
+      - 9092:9092             # Kafka broker
+    networks:
+      - app-tier
+
+  portainer:
+    image: portainer/portainer
+    command: -H unix:///var/run/docker.sock
+    restart: always
+    ports:
+      - 9000:9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app-tier
