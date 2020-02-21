@@ -56,7 +56,8 @@ public abstract class IntegrationTest {
                     }
                 });
 
-        newman.withFileSystemBind(new File("./src/postman").getCanonicalPath(), "/etc/newman");
+        // TODO: Investigate moving this mapping to a target subfolder so that test reports can be captured.
+        newman.withFileSystemBind(new File("./src/main/postman").getCanonicalPath(), "/etc/newman");
 
         newman.start();
     }
@@ -81,7 +82,8 @@ public abstract class IntegrationTest {
                     "_postman_variable_scope", "environment"
             );
 
-            val environmentFile = new File("./src/postman/environment.json");
+            // TODO: Investigate moving this mapping to a target subfolder so that test reports can be captured.
+            val environmentFile = new File("./src/main/postman/environment.json");
             environmentFile.deleteOnExit();
 
             new ObjectMapper().writeValue(environmentFile, environment);

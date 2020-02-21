@@ -272,7 +272,7 @@
 
                                     <!-- Specify where to find Dockerfile relative to build context '.' -->
                                     <arg value="-f" />
-                                    <arg value="./src/docker/Dockerfile" />
+                                    <arg value="./src/main/docker/Dockerfile" />
 
                                     <!-- build context should be at root folder -->
                                     <arg value="." />

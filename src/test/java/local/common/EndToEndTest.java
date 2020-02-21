@@ -27,7 +27,7 @@ import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 public abstract class EndToEndTest {
 
     private static final String BASE_URL = "baseUrl";
-    private static final String DOCKER_COMPOSE_PROJECT_RELATIVE_PATH = "src/docker/end-to-end-docker-compose.yml";
+    private static final String DOCKER_COMPOSE_PROJECT_RELATIVE_PATH = "src/main/docker/end-to-end-docker-compose.yml";
     private static final String NEWMAN_IMAGE_NAME = "postman/newman:ubuntu";
 
     private DockerComposeContainer composeContainer;
@@ -81,7 +81,8 @@ public abstract class EndToEndTest {
                     }
                 });
 
-        newman.withFileSystemBind(new File("./src/postman").getCanonicalPath(), "/etc/newman");
+        // TODO: Investigate moving this mapping to a target subfolder so that test reports can be captured.
+        newman.withFileSystemBind(new File("./src/main/postman").getCanonicalPath(), "/etc/newman");
 
         newman.start();
     }
@@ -154,7 +155,8 @@ public abstract class EndToEndTest {
                     "_postman_variable_scope", "environment"
             );
 
-            val environmentFile = File.createTempFile("e2e-env-", ".json", new File("./src/postman"));
+            // TODO: Investigate moving this mapping to a target subfolder so that test reports can be captured.
+            val environmentFile = File.createTempFile("e2e-env-", ".json", new File("./src/main/postman"));
             environmentFile.deleteOnExit();
 
             // Convert to JSON and write.
