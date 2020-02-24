@@ -42,7 +42,7 @@ public abstract class IntegrationTest {
   }
 
   protected void startNewmanContainer() throws IOException {
-    /**
+    /*
      * Start Newman container so that it sits quiesced at a shell prompt. Test cases will
      * invoke into the running newman container using docker exec.
      */
@@ -57,8 +57,10 @@ public abstract class IntegrationTest {
           }
         });
 
-    // TODO: Investigate moving this mapping to a target subfolder so that test reports can be captured.
-    newman.withFileSystemBind(new File("./src/main/postman").getCanonicalPath(), "/etc/newman");
+    // TODO: Investigate moving this mapping to a target subfolder so that test
+    //  reports can be captured.
+    newman.withFileSystemBind(
+        new File("./src/main/postman").getCanonicalPath(), "/etc/newman");
 
     newman.start();
   }
@@ -84,7 +86,8 @@ public abstract class IntegrationTest {
           "_postman_variable_scope", "environment"
       );
 
-      // TODO: Investigate moving this mapping to a target subfolder so that test reports can be captured.
+      // TODO: Investigate moving this mapping to a target subfolder so that test
+      //  reports can be captured.
       val environmentFile = new File("./src/main/postman/environment.json");
       environmentFile.deleteOnExit();
 
@@ -108,6 +111,12 @@ public abstract class IntegrationTest {
     public final String stderr;
     public final int exitCode;
 
+    /**
+     * Creates a data object collect output results.
+     * @param stdout Text collected from stdout
+     * @param stderr Text collected from stderr
+     * @param exitCode Integer exit code
+     */
     public NewmanResult(final String stdout, final String stderr, final int exitCode) {
       this.stdout = stdout;
       this.stderr = stderr;

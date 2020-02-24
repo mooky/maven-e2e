@@ -26,7 +26,8 @@ import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 public abstract class EndToEndTest {
 
   private static final String BASE_URL = "baseUrl";
-  private static final String DOCKER_COMPOSE_PROJECT_RELATIVE_PATH = "src/main/docker/end-to-end-docker-compose.yml";
+  private static final String DOCKER_COMPOSE_PROJECT_RELATIVE_PATH
+      = "src/main/docker/end-to-end-docker-compose.yml";
   private static final String NEWMAN_IMAGE_NAME = "postman/newman:ubuntu";
 
   private DockerComposeContainer composeContainer;
@@ -44,11 +45,11 @@ public abstract class EndToEndTest {
     stopDockerCompose();
   }
 
-  /**
+  /*
    * Override to provide base url and port for service under test for Postman's Newman to invoke.
    * Note that you cannot use 'localhost' as the Newman container would treat that as a container
    * relative address and not the host operating system address.
-   * <p>
+   *
    * Example: http://192.168.0.23:8080
    */
   protected String getBaseUrl() {
@@ -66,7 +67,7 @@ public abstract class EndToEndTest {
       throw new RuntimeException("Newman container already started.");
     }
 
-    /**
+    /*
      * Start Newman container so that it sits quiesced at a shell prompt. Test cases will
      * invoke into the running newman container using docker exec.
      */
@@ -81,8 +82,10 @@ public abstract class EndToEndTest {
           }
         });
 
-    // TODO: Investigate moving this mapping to a target subfolder so that test reports can be captured.
-    newman.withFileSystemBind(new File("./src/main/postman").getCanonicalPath(), "/etc/newman");
+    // TODO: Investigate moving this mapping to a target subfolder so that test
+    //  reports can be captured.
+    newman.withFileSystemBind(
+        new File("./src/main/postman").getCanonicalPath(), "/etc/newman");
 
     newman.start();
   }
@@ -97,8 +100,10 @@ public abstract class EndToEndTest {
 
     composeContainer = new DockerComposeContainer("e2e", dockerComposeYaml)
         .withLocalCompose(false)
-        .withExposedService("kafka_1", 9092, Wait.forListeningPort())
-        .withExposedService("api_1", 8080, Wait.forHttp("/actuator/health").forStatusCode(200));
+        .withExposedService("kafka_1", 9092,
+            Wait.forListeningPort())
+        .withExposedService("api_1", 8080,
+            Wait.forHttp("/actuator/health").forStatusCode(200));
 
     composeContainer.start();
 
@@ -162,7 +167,8 @@ public abstract class EndToEndTest {
           "_postman_variable_scope", "environment"
       );
 
-      // TODO: Investigate moving this mapping to a target subfolder so that test reports can be captured.
+      // TODO: Investigate moving this mapping to a target subfolder so that test
+      //  reports can be captured.
       val environmentFile = File
           .createTempFile("e2e-env-", ".json", new File("./src/main/postman"));
       environmentFile.deleteOnExit();
@@ -187,6 +193,12 @@ public abstract class EndToEndTest {
     public final String stderr;
     public final int exitCode;
 
+    /**
+     * Creates a data object collect output results.
+     * @param stdout Text collected from stdout
+     * @param stderr Text collected from stderr
+     * @param exitCode Integer exit code
+     */
     public NewmanResult(final String stdout, final String stderr, final int exitCode) {
       this.stdout = stdout;
       this.stderr = stderr;

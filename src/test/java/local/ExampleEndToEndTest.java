@@ -1,11 +1,10 @@
 package local;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.io.File;
 import local.common.EndToEndTest;
-import org.assertj.core.util.Strings;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class ExampleEndToEndTest extends EndToEndTest {
 
