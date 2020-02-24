@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ExampleEndToEndTest extends EndToEndTest {
+class ExampleEndToEndTest extends EndToEndTest {
 
   @Test
   void api_passes_happy_path_scenarios() {

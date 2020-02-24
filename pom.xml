@@ -6,15 +6,24 @@
 
   <!--
 
+    * * * Docker must be installed to perform integration and end-to-end functional testing. * * *
+
+
     # Example development workflow tasks
 
     Note that JUnit5 is used to perform unit, integration and end-to-end functional testing.
     Test cases need to be tagged with 'Unit', 'Integration' or 'EndToEnd' to be included in
-    the correct test phase.
+    the correct test phase. Example: `@Tag("Unit")`.
+
+    Note: SUT == system under test
 
     - Compile and unit test:
 
         $ mvn clean test -Dbuildtime.output.log
+
+    - Perform checkstyle check:
+
+        $ mvn checkstyle:check
 
     - Perform integration testing using docker hosted dependencies. SUT runs as a JAR.
 
@@ -46,7 +55,7 @@
   <properties>
     <!--
         java.version is a SpringBoot plugin property that manages the source and target compiler settings.
-        Choose '1.8' or '11'.
+        Typically '1.8' or '11'.
     -->
     <java.version>11</java.version>
 
@@ -60,6 +69,10 @@
     <!-- docker related variables -->
     <docker.build.skip>true</docker.build.skip>
     <docker.image>supply-chain-replenishment/${project.artifactId}</docker.image>
+
+    <!-- Unneeded lifecycles -->
+    <skip.install>true</skip.install>
+    <skip.deploy>true</skip.deploy>
 
   </properties>
 
@@ -232,8 +245,14 @@
 
         Performs code checkstyle during the check goal.
 
+        Example usage:
+
+        mvn checkstyle:check
+
         Uses google coding style:
         https://github.com/checkstyle/checkstyle/blob/master/src/main/resources/google_checks.xml
+
+        TODO: Need to generate a report and integrate output into pipeline.
 
       -->
       <plugin>
@@ -270,18 +289,24 @@
           mvn compile
 
       -->
-      <!--            <plugin>-->
-      <!--                <groupId>pl.project13.maven</groupId>-->
-      <!--                <artifactId>git-commit-id-plugin</artifactId>-->
-      <!--                <executions>-->
-      <!--                    <execution>-->
-      <!--                        <phase>compile</phase>-->
-      <!--                        <goals>-->
-      <!--                            <goal>revision</goal>-->
-      <!--                        </goals>-->
-      <!--                    </execution>-->
-      <!--                </executions>-->
-      <!--            </plugin>-->
+      <plugin>
+        <groupId>pl.project13.maven</groupId>
+        <artifactId>git-commit-id-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>compile</phase>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+          </execution>
+        </executions>
+
+        <!-- This section was added to address build warnings during development. -->
+        <configuration>
+          <skip>true</skip> <!-- TODO: Remove this line after source is available at a remote origin -->
+        </configuration>
+      </plugin>
+
 
       <!--
           ====== maven-failsafe-plugin ======
@@ -399,8 +424,9 @@
 
                 <!--
                     Consider if pushing to docker registry makes sense here or if publishing
-                    should only be performed from build pipeline. If only from build pipeline,
-                    there may be no need to complicate the pom.xml with additional responsibilities.
+                    should only be performed from build pipeline. If only appropriate from the
+                    build pipeline, there may be no need to complicate the pom.xml with
+                    additional tasks that shouldn't be performed locally by developers.
                  -->
 
               </target>
@@ -472,6 +498,49 @@
             <compilerArg>-Amapstruct.defaultComponentModel=spring</compilerArg>
           </compilerArgs>
 
+        </configuration>
+      </plugin>
+
+
+      <!--
+        ====== maven-install-plugin ======
+
+        Disable the install plugin. Local repository install is only needed for libraries.
+
+      -->
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-install</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <skip>${skip.install}</skip>
+        </configuration>
+      </plugin>
+
+      <!--
+        ====== maven-deploy-plugin ======
+
+        Disable the deploy plugin. The deployable unit is a containerized fat jar
+        which will be handled by the build pipeline.
+
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-deploy</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <skip>${skip.deploy}</skip>
         </configuration>
       </plugin>
 
