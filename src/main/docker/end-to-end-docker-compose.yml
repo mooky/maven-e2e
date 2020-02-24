@@ -50,6 +50,8 @@ services:
     networks:
       - app-tier
 
+#  Removed -- unable to perform docker exec via TestContainers.
+
 #  postman:
 #    depends_on:
 #      - api
